@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moon Girl & Pen Boy Letters</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="intro-screen" data-screen="intro" aria-label="Open letter">
+        <div class="sky-dots" aria-hidden="true"></div>
+        <button class="envelope-button" type="button" data-open-envelope aria-label="Open envelope">
+          <span class="envelope">
+            <span class="envelope-back"></span>
+            <span class="letter-peek">
+              <span>For you</span>
+            </span>
+            <span class="envelope-flap"></span>
+            <span class="envelope-front"></span>
+            <span class="heart-seal">&hearts;</span>
+          </span>
+        </button>
+        <div class="intro-copy">
+          <p>tap the envelope</p>
+          <h1>A tiny letter cloud</h1>
+        </div>
+      </section>
+
+      <section class="letter-room hidden" data-screen="room" aria-label="Letter delivery room">
+        <header class="room-header">
+          <div>
+            <p class="eyebrow">private delivery</p>
+            <h1>Moon Girl & Pen Boy</h1>
+          </div>
+          <div class="cloud-status" data-cloud-status>
+            <span class="status-dot"></span>
+            <span>Local preview</span>
+          </div>
+        </header>
+
+        <section class="stage" aria-label="Wallets and letter">
+          <article class="wallet wallet-moon" data-wallet="moon">
+            <div class="wallet-top">
+              <span class="avatar moon-avatar" aria-hidden="true">
+                <span class="moon">&#9790;</span>
+                <span class="spark">&#10022;</span>
+              </span>
+              <div>
+                <h2>Moon Girl</h2>
+                <p>soft night wallet</p>
+              </div>
+            </div>
+            <div class="wallet-pocket">
+              <span data-count="moon">0</span>
+              <small>letters</small>
+            </div>
+            <button class="write-btn" type="button" data-compose="moon">Write as Moon Girl</button>
+          </article>
+
+          <div class="delivery-line" aria-hidden="true">
+            <span class="flying-letter">&#9993;</span>
+          </div>
+
+          <article class="wallet wallet-pen" data-wallet="pen">
+            <div class="wallet-top">
+              <span class="avatar pen-avatar" aria-hidden="true">
+                <span class="pen">&#9998;</span>
+                <span class="ink">&#9679;</span>
+              </span>
+              <div>
+                <h2>Pen Boy</h2>
+                <p>sweet ink wallet</p>
+              </div>
+            </div>
+            <div class="wallet-pocket">
+              <span data-count="pen">0</span>
+              <small>letters</small>
+            </div>
+            <button class="write-btn" type="button" data-compose="pen">Write as Pen Boy</button>
+          </article>
+        </section>
+
+        <section class="desk">
+          <form class="composer hidden" data-composer>
+            <div class="composer-head">
+              <div>
+                <p class="eyebrow" data-compose-route>Pen Boy to Moon Girl</p>
+                <h2>Write a letter</h2>
+              </div>
+              <button class="icon-btn" type="button" data-close-composer aria-label="Close composer">&times;</button>
+            </div>
+            <label>
+              <span>Title</span>
+              <input data-title maxlength="80" placeholder="A little title..." required />
+            </label>
+            <label>
+              <span>Letter</span>
+              <textarea data-body rows="8" placeholder="Write what your heart wants to say..." required></textarea>
+            </label>
+            <button class="send-btn" type="submit">Send letter</button>
+          </form>
+
+          <article class="inbox">
+            <div class="inbox-head">
+              <div>
+                <p class="eyebrow">saved letters</p>
+                <h2 data-inbox-title>Moon Girl wallet</h2>
+              </div>
+              <div class="segmented" role="tablist" aria-label="Choose wallet">
+                <button type="button" class="active" data-filter="moon">Moon</button>
+                <button type="button" data-filter="pen">Pen</button>
+              </div>
+            </div>
+            <div class="letter-list" data-letter-list></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <template id="letter-template">
+      <article class="letter-card">
+        <div>
+          <p class="letter-meta"></p>
+          <h3></h3>
+        </div>
+        <p class="letter-body"></p>
+      </article>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
