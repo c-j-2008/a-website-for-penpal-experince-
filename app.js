@@ -139,6 +139,7 @@ async function setupCloud() {
 
 function setCloudStatus(label, mode) {
   const status = $("[data-cloud-status]");
+  if (!status) return;
   status.querySelector("span:last-child").textContent = label;
   status.dataset.mode = mode;
 }
