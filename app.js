@@ -1,3 +1,35 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getFirestore,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  orderBy,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+// Paste your Firebase web app config here.
+// Firebase Console -> Project settings -> General -> Your apps -> Web app config.
+const firebaseConfig = {
+  apiKey: "AIzaSyAzrtBiXELuIjVZrPWSHNPvx0nfAWswEV4",
+  authDomain: "penpal-letter-website.firebaseapp.com",
+  projectId: "penpal-letter-website",
+  storageBucket: "penpal-letter-website.firebasestorage.app",
+  messagingSenderId: "68329660896",
+  appId: "1:68329660896:web:7c036d8b3fd92410a54b85",
+  measurementId: "G-2DR6TGX9J2",
+};
+
+const firebaseConfigured = !Object.values(firebaseConfig).some((value) =>
+  String(value).startsWith("PASTE_")
+);
+
+const firebaseApp = firebaseConfigured ? initializeApp(firebaseConfig) : null;
+const db = firebaseApp ? getFirestore(firebaseApp) : null;
+
 const state = {
   currentWriter: "pen",
   currentInbox: "moon",
@@ -120,21 +152,42 @@ const formatDate = (value) =>
   }).format(new Date(value));
 
 async function setupCloud() {
-  try {
-    const response = await fetch("/api/letters");
-    if (!response.ok) {
-      throw new Error("Cloud endpoint is not ready");
-    }
-
-    state.letters = await response.json();
-    state.cloudReady = true;
-    saveLocalLetters();
-    render();
-    setCloudStatus("GitHub synced", "cloud");
-  } catch (error) {
-    console.info(error.message);
-    setCloudStatus("Local preview", "local");
+  if (!db) {
+    setCloudStatus("Add Firebase config", "local");
+    return;
   }
+
+  state.cloudReady = true;
+  setCloudStatus("Firebase syncing", "cloud");
+
+  onSnapshot(
+    query(collection(db, "letters"), orderBy("createdAt", "desc")),
+    (snapshot) => {
+      state.letters = snapshot.docs.map((item) => fromFirestore(item));
+      saveLocalLetters();
+      render();
+      setCloudStatus("Firebase synced", "cloud");
+    },
+    (error) => {
+      console.info(error.message);
+      state.cloudReady = false;
+      setCloudStatus("Local preview", "local");
+    }
+  );
+
+  onSnapshot(
+    query(collection(db, "deletedLetters"), orderBy("deletedAt", "desc")),
+    (snapshot) => {
+      state.deletedLetters = snapshot.docs.map((item) => fromFirestore(item));
+      saveDeletedLetters();
+      renderBin();
+    },
+    (error) => {
+      console.info(error.message);
+      state.cloudReady = false;
+      setCloudStatus("Local preview", "local");
+    }
+  );
 }
 
 function setCloudStatus(label, mode) {
@@ -269,20 +322,9 @@ async function sendLetter(event) {
 
   if (!letter.title || !letter.body) return;
 
-  if (state.cloudReady) {
+  if (db && state.cloudReady) {
     try {
-      const response = await fetch("/api/letters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(letter),
-      });
-
-      if (!response.ok) {
-        throw new Error("Could not save to GitHub");
-      }
-
-      state.letters = await response.json();
-      saveLocalLetters();
+      await setDoc(doc(db, "letters", letter.id), toFirestore(letter));
     } catch (error) {
       console.info(error.message);
       setCloudStatus("Local preview", "local");
@@ -301,26 +343,19 @@ async function sendLetter(event) {
 }
 
 async function deleteLetter(letter) {
+  const deletedLetter = { ...letter, deletedAt: new Date().toISOString() };
   state.letters = state.letters.filter((item) => getLetterId(item) !== getLetterId(letter));
-  state.deletedLetters = [{ ...letter, deletedAt: new Date().toISOString() }, ...state.deletedLetters];
+  state.deletedLetters = [deletedLetter, ...state.deletedLetters];
   saveLocalLetters();
   saveDeletedLetters();
   render();
 
-  if (!state.cloudReady) return;
+  if (!db || !state.cloudReady) return;
 
   try {
-    const response = await fetch(`/api/letters?id=${encodeURIComponent(getLetterId(letter))}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      throw new Error("Could not delete from GitHub");
-    }
-
-    state.letters = await response.json();
-    saveLocalLetters();
-    render();
+    const letterId = getLetterId(letter);
+    await setDoc(doc(db, "deletedLetters", letterId), toFirestore(deletedLetter));
+    await deleteDoc(doc(db, "letters", letterId));
   } catch (error) {
     console.info(error.message);
     setCloudStatus("Local preview", "local");
@@ -330,6 +365,42 @@ async function deleteLetter(letter) {
 
 function getLetterId(letter) {
   return letter.id || `${letter.from}-${letter.to}-${letter.createdAt}-${letter.title}`;
+}
+
+function toFirestore(letter) {
+  return {
+    id: getLetterId(letter),
+    title: String(letter.title || "").slice(0, 80),
+    body: String(letter.body || "").slice(0, 5000),
+    stamp: String(letter.stamp || "💌 Secret Stamp").slice(0, 80),
+    deliveryType: letter.deliveryType === "express" ? "express" : "air",
+    deliveryLabel: letter.deliveryLabel || deliveryOptions[letter.deliveryType]?.label || "✈️ Air Mail",
+    deliverAt: letter.deliverAt || letter.createdAt || new Date().toISOString(),
+    from: letter.from === "moon" ? "moon" : "pen",
+    to: letter.to === "pen" ? "pen" : "moon",
+    createdAt: letter.createdAt || new Date().toISOString(),
+    deletedAt: letter.deletedAt || null,
+    updatedAt: serverTimestamp(),
+  };
+}
+
+function fromFirestore(snapshotDoc) {
+  const data = snapshotDoc.data();
+  return {
+    ...data,
+    id: data.id || snapshotDoc.id,
+    createdAt: toIsoDate(data.createdAt),
+    deliverAt: toIsoDate(data.deliverAt || data.createdAt),
+    deletedAt: data.deletedAt ? toIsoDate(data.deletedAt) : undefined,
+  };
+}
+
+function toIsoDate(value) {
+  if (!value) return new Date().toISOString();
+  if (typeof value === "string") return value;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  if (typeof value.seconds === "number") return new Date(value.seconds * 1000).toISOString();
+  return new Date(value).toISOString();
 }
 
 function getDeliveryInfo(letter) {
@@ -405,7 +476,7 @@ function renderBin() {
   });
 }
 
-function restoreLetter(letter) {
+async function restoreLetter(letter) {
   const restored = { ...letter };
   delete restored.deletedAt;
   state.deletedLetters = state.deletedLetters.filter((item) => getLetterId(item) !== getLetterId(letter));
@@ -413,6 +484,18 @@ function restoreLetter(letter) {
   saveDeletedLetters();
   saveLocalLetters();
   render();
+
+  if (!db || !state.cloudReady) return;
+
+  try {
+    const letterId = getLetterId(letter);
+    await setDoc(doc(db, "letters", letterId), toFirestore(restored));
+    await deleteDoc(doc(db, "deletedLetters", letterId));
+  } catch (error) {
+    console.info(error.message);
+    setCloudStatus("Local preview", "local");
+    state.cloudReady = false;
+  }
 }
 
 $("[data-open-envelope]").addEventListener("click", () => {
