@@ -146,6 +146,12 @@
                 <option value="🫂 Miss You Stamp">🫂 Miss You Stamp</option>
               </select>
             </label>
+            <div class="stamp-preview" data-stamp-preview aria-hidden="true">
+              <span class="postage-stamp">
+                <span class="stamp-logo"></span>
+                <span class="stamp-name"></span>
+              </span>
+            </div>
             <label>
               <span>Delivery time</span>
               <select data-delivery>
@@ -215,6 +221,10 @@
           <button class="delete-letter" type="button">Delete letter</button>
         </div>
         <div class="unfolded-paper">
+          <span class="postage-stamp letter-postage" aria-hidden="true">
+            <span class="stamp-logo"></span>
+            <span class="stamp-name"></span>
+          </span>
           <p class="letter-body"></p>
         </div>
       </article>

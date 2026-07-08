@@ -50,6 +50,7 @@ const composer = $("[data-composer]");
 const titleInput = $("[data-title]");
 const bodyInput = $("[data-body]");
 const stampInput = $("[data-stamp]");
+const stampPreview = $("[data-stamp-preview]");
 const deliveryInput = $("[data-delivery]");
 const letterList = $("[data-letter-list]");
 const template = $("#letter-template");
@@ -223,6 +224,13 @@ function updateComposerRoute() {
   $("[data-compose-route]").textContent = `${walletNames[state.currentWriter]} to ${walletNames[receiver]}`;
 }
 
+function updateStampPreview(target = stampPreview, stamp = stampInput.value) {
+  if (!target) return;
+
+  target.querySelector(".stamp-logo").textContent = getStampLogo(stamp);
+  target.querySelector(".stamp-name").textContent = getStampName(stamp);
+}
+
 function renderCounts() {
   ["moon", "pen"].forEach((wallet) => {
     const count = state.letters.filter((letter) => letter.to === wallet).length;
@@ -271,6 +279,7 @@ function renderInbox() {
     card.querySelector(".letter-meta").textContent = `From ${walletNames[letter.from]} - ${formatDate(letter.createdAt)}`;
     card.querySelector(".letter-title").textContent = letter.title;
     card.querySelector(".letter-stamp").textContent = letter.stamp || "💌 Secret Stamp";
+    updateStampPreview(card.querySelector(".letter-postage"), letter.stamp || "💌 Secret Stamp");
     card.querySelector(".arrival-status").textContent = delivered
       ? `${delivery.label} arrived`
       : getArrivalText(letter);
@@ -339,6 +348,7 @@ async function sendLetter(event) {
 
   state.currentInbox = letter.to;
   composer.reset();
+  updateStampPreview();
   render();
 }
 
@@ -365,6 +375,14 @@ async function deleteLetter(letter) {
 
 function getLetterId(letter) {
   return letter.id || `${letter.from}-${letter.to}-${letter.createdAt}-${letter.title}`;
+}
+
+function getStampLogo(stamp) {
+  return String(stamp || "💌").trim().split(/\s+/)[0] || "💌";
+}
+
+function getStampName(stamp) {
+  return String(stamp || "Secret Stamp").replace(getStampLogo(stamp), "").trim() || "Secret Stamp";
 }
 
 function openLetterReader(card, envelopeButton, letterId) {
@@ -558,6 +576,7 @@ window.addEventListener("popstate", () => {
 });
 
 composer.addEventListener("submit", sendLetter);
+stampInput.addEventListener("change", () => updateStampPreview());
 $("[data-open-bin]").addEventListener("click", () => {
   binPanel.classList.remove("hidden");
   if (!state.binUnlocked) {
@@ -587,5 +606,6 @@ binLock.addEventListener("submit", (event) => {
 window.setInterval(updateCountdowns, 1000);
 
 loadLocalLetters();
+updateStampPreview();
 render();
 setupCloud();
