@@ -29,6 +29,10 @@ body {
   overflow-x: hidden;
 }
 
+body.reading-letter {
+  overflow: hidden;
+}
+
 button,
 input,
 textarea {
@@ -654,6 +658,25 @@ textarea {
   filter: saturate(0.94);
 }
 
+.letter-card.open {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  align-content: start;
+  overflow-y: auto;
+  width: 100vw;
+  max-width: none;
+  min-height: 100vh;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 122, 168, 0.16), transparent 12rem),
+    radial-gradient(circle at 88% 16%, rgba(61, 152, 184, 0.14), transparent 14rem),
+    repeating-linear-gradient(#fff8eb 0 1.95rem, rgba(126, 79, 43, 0.12) 2rem 2.06rem),
+    #fff8eb;
+}
+
 .letter-envelope {
   display: grid;
   grid-template-columns: 4.8rem minmax(0, 1fr);
@@ -732,6 +755,14 @@ textarea {
   transform: translateY(-0.7rem) scaleY(1);
 }
 
+.letter-card.open .letter-envelope {
+  width: min(54rem, 100%);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 1.35rem);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.66);
+}
+
 .letter-summary {
   display: grid;
   gap: 0.12rem;
@@ -792,9 +823,11 @@ textarea {
 }
 
 .letter-card.open .unfolded-paper {
-  max-height: 42rem;
+  width: min(54rem, 100%);
+  max-height: none;
   opacity: 1;
-  padding: 0.3rem 0.95rem 0.95rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 1.35rem);
   transform: scaleY(1);
 }
 
@@ -822,6 +855,15 @@ textarea {
   font-weight: 600;
 }
 
+.letter-card.open .letter-body {
+  min-height: min(60vh, 36rem);
+  max-height: none;
+  padding-top: 0;
+  overflow: visible;
+  font-size: clamp(1.25rem, 2.8vw, 1.8rem);
+  line-height: 1.65;
+}
+
 .delete-letter {
   border: 0;
   border-radius: 999px;
@@ -836,6 +878,12 @@ textarea {
   display: flex;
   justify-content: flex-end;
   padding: 0 0.95rem 0.75rem;
+}
+
+.letter-card.open .letter-actions {
+  width: min(54rem, 100%);
+  margin: 0.75rem auto 0;
+  padding: 0;
 }
 
 .bin-panel {

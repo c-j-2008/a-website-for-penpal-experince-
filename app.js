@@ -69,7 +69,7 @@ const receiverFor = (writer) => (writer === "pen" ? "moon" : "pen");
 const deliveryOptions = {
   air: {
     label: "✈️ Air Mail",
-    hours: 18,
+    hours: 22,
   },
   express: {
     label: "🚀 Express Mail",
@@ -242,6 +242,7 @@ function renderStats() {
 }
 
 function renderInbox() {
+  document.body.classList.remove("reading-letter");
   $("[data-inbox-title]").textContent = `${walletNames[state.currentInbox]} wallet`;
   $$("[data-filter]").forEach((button) => {
     button.classList.toggle("active", button.dataset.filter === state.currentInbox);
@@ -278,9 +279,8 @@ function renderInbox() {
     envelopeButton.setAttribute("aria-disabled", String(!delivered));
     envelopeButton.addEventListener("click", () => {
       if (!isDelivered(letter)) return;
-      const isOpen = card.classList.toggle("open");
-      envelopeButton.setAttribute("aria-expanded", String(isOpen));
-      if (isOpen && !state.readLetterIds.includes(letterId)) {
+      openLetterReader(card, envelopeButton, letterId);
+      if (!state.readLetterIds.includes(letterId)) {
         state.readLetterIds = [...state.readLetterIds, letterId];
         saveReadLetters();
         card.classList.remove("unread");
@@ -365,6 +365,30 @@ async function deleteLetter(letter) {
 
 function getLetterId(letter) {
   return letter.id || `${letter.from}-${letter.to}-${letter.createdAt}-${letter.title}`;
+}
+
+function openLetterReader(card, envelopeButton, letterId) {
+  closeLetterReader(false);
+  card.classList.add("open");
+  document.body.classList.add("reading-letter");
+  envelopeButton.setAttribute("aria-expanded", "true");
+
+  if (location.hash !== `#letter-${letterId}`) {
+    history.pushState({ openLetterId: letterId }, "", `#letter-${letterId}`);
+  }
+}
+
+function closeLetterReader(updateHistory = true) {
+  const openCard = $(".letter-card.open");
+  if (!openCard) return;
+
+  openCard.classList.remove("open");
+  openCard.querySelector(".letter-envelope")?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("reading-letter");
+
+  if (updateHistory && location.hash.startsWith("#letter-")) {
+    history.back();
+  }
 }
 
 function toFirestore(letter) {
@@ -517,6 +541,7 @@ $$("[data-compose]").forEach((button) => {
 
 $$("[data-filter]").forEach((button) => {
   button.addEventListener("click", () => {
+    closeLetterReader(false);
     state.currentInbox = button.dataset.filter;
     render();
   });
@@ -524,6 +549,12 @@ $$("[data-filter]").forEach((button) => {
 
 $("[data-close-composer]").addEventListener("click", () => {
   composer.classList.add("hidden");
+});
+
+window.addEventListener("popstate", () => {
+  if (!location.hash.startsWith("#letter-")) {
+    closeLetterReader(false);
+  }
 });
 
 composer.addEventListener("submit", sendLetter);
